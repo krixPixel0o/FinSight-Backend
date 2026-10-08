@@ -1,0 +1,125 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.31.xsd">
+    <changeSet id="001-users" author="finsight">
+        <preConditions onFail="MARK_RAN"><not><tableExists tableName="users"/></not></preConditions>
+        <createTable tableName="users">
+            <column name="id" type="BIGINT" autoIncrement="true"><constraints primaryKey="true" nullable="false"/></column>
+            <column name="name" type="VARCHAR(255)"><constraints nullable="false"/></column>
+            <column name="email" type="VARCHAR(255)"><constraints nullable="false" unique="true" uniqueConstraintName="uk_users_email"/></column>
+            <column name="password" type="VARCHAR(255)"><constraints nullable="false"/></column>
+            <column name="currency" type="VARCHAR(3)" defaultValue="INR"><constraints nullable="false"/></column>
+            <column name="locale" type="VARCHAR(10)" defaultValue="en-IN"><constraints nullable="false"/></column>
+        </createTable>
+    </changeSet>
+
+    <changeSet id="002-accounts" author="finsight">
+        <preConditions onFail="MARK_RAN"><not><tableExists tableName="accounts"/></not></preConditions>
+        <createTable tableName="accounts">
+            <column name="id" type="BIGINT" autoIncrement="true"><constraints primaryKey="true" nullable="false"/></column>
+            <column name="user_id" type="BIGINT"><constraints nullable="false" foreignKeyName="fk_accounts_user" references="users(id)"/></column>
+            <column name="name" type="VARCHAR(80)"><constraints nullable="false"/></column>
+            <column name="type" type="VARCHAR(20)"><constraints nullable="false"/></column>
+            <column name="currency" type="VARCHAR(3)" defaultValue="INR"><constraints nullable="false"/></column>
+            <column name="opening_balance" type="NUMERIC(19,2)" defaultValueNumeric="0"><constraints nullable="false"/></column>
+            <column name="active" type="BOOLEAN" defaultValueBoolean="true"><constraints nullable="false"/></column>
+            <column name="created_at" type="TIMESTAMP WITH TIME ZONE"><constraints nullable="false"/></column>
+            <column name="updated_at" type="TIMESTAMP WITH TIME ZONE"><constraints nullable="false"/></column>
+        </createTable>
+        <addUniqueConstraint tableName="accounts" columnNames="user_id,name" constraintName="uk_accounts_user_name"/>
+    </changeSet>
+
+    <changeSet id="003-categories" author="finsight">
+        <preConditions onFail="MARK_RAN"><not><tableExists tableName="categories"/></not></preConditions>
+        <createTable tableName="categories">
+            <column name="id" type="BIGINT" autoIncrement="true"><constraints primaryKey="true" nullable="false"/></column>
+            <column name="user_id" type="BIGINT"><constraints nullable="false" foreignKeyName="fk_categories_user" references="users(id)"/></column>
+            <column name="name" type="VARCHAR(80)"><constraints nullable="false"/></column>
+            <column name="type" type="VARCHAR(20)"><constraints nullable="false"/></column>
+        </createTable>
+        <addUniqueConstraint tableName="categories" columnNames="user_id,name,type" constraintName="uk_categories_user_name_type"/>
+    </changeSet>
+
+    <changeSet id="004-budgets" author="finsight">
+        <preConditions onFail="MARK_RAN"><not><tableExists tableName="budgets"/></not></preConditions>
+        <createTable tableName="budgets">
+            <column name="id" type="BIGINT" autoIncrement="true"><constraints primaryKey="true" nullable="false"/></column>
+            <column name="user_id" type="BIGINT"><constraints nullable="false" foreignKeyName="fk_budgets_user" references="users(id)"/></column>
+            <column name="category" type="VARCHAR(80)"><constraints nullable="false"/></column>
+            <column name="amount" type="NUMERIC(19,2)"><constraints nullable="false"/></column>
+            <column name="period" type="VARCHAR(20)"><constraints nullable="false"/></column>
+            <column name="start_date" type="DATE"><constraints nullable="false"/></column>
+            <column name="end_date" type="DATE"><constraints nullable="false"/></column>
+            <column name="created_at" type="TIMESTAMP WITH TIME ZONE"><constraints nullable="false"/></column>
+        </createTable>
+    </changeSet>
+
+    <changeSet id="005-transactions" author="finsight">
+        <preConditions onFail="MARK_RAN"><not><tableExists tableName="transactions"/></not></preConditions>
+        <createTable tableName="transactions">
+            <column name="id" type="BIGINT" autoIncrement="true"><constraints primaryKey="true" nullable="false"/></column>
+            <column name="user_id" type="BIGINT"><constraints nullable="false" foreignKeyName="fk_transactions_user" references="users(id)"/></column>
+            <column name="account_id" type="BIGINT"><constraints foreignKeyName="fk_transactions_account" references="accounts(id)"/></column>
+            <column name="source_account_id" type="BIGINT"><constraints foreignKeyName="fk_transactions_source_account" references="accounts(id)"/></column>
+            <column name="target_account_id" type="BIGINT"><constraints foreignKeyName="fk_transactions_target_account" references="accounts(id)"/></column>
+            <column name="type" type="VARCHAR(20)"><constraints nullable="false"/></column>
+            <column name="amount" type="NUMERIC(19,2)"><constraints nullable="false"/></column>
+            <column name="category" type="VARCHAR(80)"><constraints nullable="false"/></column>
+            <column name="description" type="VARCHAR(160)"><constraints nullable="false"/></column>
+            <column name="currency" type="VARCHAR(3)"><constraints nullable="false"/></column>
+            <column name="transaction_date" type="DATE"><constraints nullable="false"/></column>
+            <column name="notes" type="VARCHAR(500)"/>
+            <column name="created_at" type="TIMESTAMP WITH TIME ZONE"><constraints nullable="false"/></column>
+        </createTable>
+    </changeSet>
+
+    <changeSet id="006-budget-user-index" author="finsight">
+        <createIndex tableName="budgets" indexName="ix_budgets_user_id"><column name="user_id"/></createIndex>
+    </changeSet>
+    <changeSet id="007-transactions-user-date-index" author="finsight">
+        <createIndex tableName="transactions" indexName="ix_transactions_user_date"><column name="user_id"/><column name="transaction_date"/></createIndex>
+    </changeSet>
+    <changeSet id="008-financial-goals" author="finsight">
+        <preConditions onFail="MARK_RAN"><not><tableExists tableName="financial_goals"/></not></preConditions>
+        <createTable tableName="financial_goals">
+            <column name="id" type="BIGINT" autoIncrement="true"><constraints primaryKey="true" nullable="false"/></column>
+            <column name="user_id" type="BIGINT"><constraints nullable="false" foreignKeyName="fk_goals_user" references="users(id)"/></column>
+            <column name="name" type="VARCHAR(100)"><constraints nullable="false"/></column>
+            <column name="target_amount" type="NUMERIC(19,2)"><constraints nullable="false"/></column>
+            <column name="current_amount" type="NUMERIC(19,2)"><constraints nullable="false"/></column>
+            <column name="currency" type="VARCHAR(3)"><constraints nullable="false"/></column>
+            <column name="target_date" type="DATE"/>
+            <column name="active" type="BOOLEAN" defaultValueBoolean="true"><constraints nullable="false"/></column>
+            <column name="created_at" type="TIMESTAMP WITH TIME ZONE"><constraints nullable="false"/></column>
+            <column name="updated_at" type="TIMESTAMP WITH TIME ZONE"><constraints nullable="false"/></column>
+        </createTable>
+        <createIndex tableName="financial_goals" indexName="ix_goals_user_active"><column name="user_id"/><column name="active"/></createIndex>
+    </changeSet>
+    <changeSet id="009-liabilities" author="finsight">
+        <preConditions onFail="MARK_RAN"><not><tableExists tableName="liabilities"/></not></preConditions>
+        <createTable tableName="liabilities">
+            <column name="id" type="BIGINT" autoIncrement="true"><constraints primaryKey="true" nullable="false"/></column>
+            <column name="user_id" type="BIGINT"><constraints nullable="false" foreignKeyName="fk_liabilities_user" references="users(id)"/></column>
+            <column name="name" type="VARCHAR(100)"><constraints nullable="false"/></column>
+            <column name="type" type="VARCHAR(24)"><constraints nullable="false"/></column>
+            <column name="current_balance" type="NUMERIC(19,2)"><constraints nullable="false"/></column>
+            <column name="annual_interest_rate" type="NUMERIC(7,4)"><constraints nullable="false"/></column>
+            <column name="monthly_payment" type="NUMERIC(19,2)"><constraints nullable="false"/></column>
+            <column name="currency" type="VARCHAR(3)"><constraints nullable="false"/></column>
+            <column name="as_of_date" type="DATE"><constraints nullable="false"/></column>
+            <column name="active" type="BOOLEAN" defaultValueBoolean="true"><constraints nullable="false"/></column>
+            <column name="created_at" type="TIMESTAMP WITH TIME ZONE"><constraints nullable="false"/></column>
+            <column name="updated_at" type="TIMESTAMP WITH TIME ZONE"><constraints nullable="false"/></column>
+        </createTable>
+        <createIndex tableName="liabilities" indexName="ix_liabilities_user_active"><column name="user_id"/><column name="active"/></createIndex>
+    </changeSet>
+    <changeSet id="010-goal-contribution-plan" author="finsight">
+        <preConditions onFail="MARK_RAN"><and><tableExists tableName="financial_goals"/><not><columnExists tableName="financial_goals" columnName="planned_monthly_contribution"/></not></and></preConditions>
+        <addColumn tableName="financial_goals">
+            <column name="planned_monthly_contribution" type="NUMERIC(19,2)" defaultValueNumeric="0">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+    </changeSet>
+</databaseChangeLog>
